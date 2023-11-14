@@ -1,0 +1,395 @@
+describe *
+codebook *
+*SEX
+label define sex 1"male" 2"female"
+label value sex_plink sex 
+rename sex_plink sex
+tab sex,missing
+**********************
+label define ever_smoked 1"No" 2"Yes"
+label value eversmk_b ever_smoked 
+rename eversmk_b ever_smoked
+by sex,sort:tab ever_smoked
+
+****************************
+label define current_smoker 0"No" 1"Yes"
+label value curr_smoke current_smoker
+rename curr_smoke current_smoker
+by sex,sort:tab current_smoker
+******************************
+label define stroke 0"No" 1"Yes"
+label value stroke_0 stroke
+rename stroke_0 stroke
+by sex,sort:tab stroke
+*******************************
+label define IHD 0"No" 1"Yes"
+label value ish_0 IHD 
+rename ish_0 IHD 
+by sex,sort:tab IHD
+*******************************
+label define HTN 0"No" 1"Yes"
+label value htn_b HTN
+rename htn_b HTN 
+by sex,sort:tab HTN
+tab HTN, missing
+********************************
+gen HTN_medcoded =.
+recode HTN_medcoded (.=1) if HTN_med=="yes"
+recode HTN_medcoded (.=0) if HTN_med=="no"
+rename HTN_medcoded HTN_Med
+by sex,sort:tab HTN_Med
+ **********************************
+label define lipid_drug 0"No" 1"Yes"
+label value lipid_lowering_b lipid_drug
+rename lipid_lowering_b lipid_drug
+by sex,sort:tab lipid_drug
+******************************
+
+*******************************
+label define chip 0"No" 1"Yes" 
+label value chip chip 
+by sex,sort:tab chip
+
+*CASES;CONTROLS
+
+**STROKE
+generate male_stroke=1 if sex==1 & stroke==1
+replace male_stroke=0 if sex==1 & stroke==0 & IHD==0 & HTN==0
+tab male_stroke
+generate female_stroke=1 if sex==2 & stroke==1
+replace female_stroke=0 if sex==2 & stroke==0 & IHD==0 & HTN==0
+tab female_stroke
+
+
+*IHD
+generate male_IHD=1 if sex==1 & IHD==1
+replace male_IHD=0 if sex==1 & stroke==0 & IHD==0 & HTN==0
+tab male_IHD
+generate female_IHD=1 if sex==2 & IHD==1
+replace female_IHD=0 if sex==2 & stroke==0 & IHD==0 & HTN==0
+tab female_IHD
+
+*HTN
+generate male_HTN=1 if sex==1 & HTN==1
+replace male_HTN=0 if sex==1 & stroke==0 & IHD==0 & HTN==0
+tab male_HTN
+generate female_HTN=1 if sex==2 & HTN==1
+replace female_HTN=0 if sex==2 & stroke==0 & IHD==0 & HTN==0
+tab female_HTN
+
+*Combined controls
+generate combinedcontrols=1 if stroke==0 & IHD==0 & HTN==0
+tab combinedcontrols
+generate male_controls=1 if sex==1 & stroke==0 & IHD==0 & HTN==0
+generate female_controls=1 if sex==2 & stroke==0 & IHD==0 & HTN==0
+
+*COMBINED IHD
+gen all_IHD=.
+recode all_IHD (.=1) if IHD==1
+recode all_IHD (.=0) if stroke==0 & IHD==0 & HTN==0
+by all_IHD,sort:tab ever_smoked
+tab all_IHD
+
+*COMBINED HTN
+gen all_HTN=.
+recode all_HTN (.=1) if HTN==1
+recode all_HTN (.=0) if stroke==0 & IHD==0 & HTN==0
+by all_HTN,sort:tab ever_smoked
+
+*COMBINED STROKE
+gen all_stroke=.
+recode all_stroke (.=1) if stroke==1
+recode all_stroke (.=0) if stroke==0 & IHD==0 & HTN==0
+by all_stroke,sort:tab lipid_drug
+
+
+* COMBINED CASES 
+by all_stroke,sort:tab ever_smoked
+by all_IHD,sort:tab ever_smoked
+by all_HTN,sort:tab ever_smoked
+*------------------------------------
+by all_stroke,sort:tab current_smoker
+by all_IHD,sort:tab current_smoker
+by all_HTN,sort:tab current_smoker
+*--------------------------------
+by all_stroke,sort:tab lipid_drug
+by all_IHD,sort:tab lipid_drug
+by all_HTN,sort:tab lipid_drug
+*---------------------------------
+by all_stroke,sort:tab htnmed_b
+by all_IHD,sort:tab htnmed_b
+by all_HTN,sort:tab htnmed_b
+
+gen all_CVD=.
+recode all_CVD (.=1) if HTN ==1
+recode all_CVD (.=1) if IHD ==1
+recode all_CVD (.=1) if stroke==1
+recode all_CVD (.=0) if HTN ==0 & stroke==0 & IHD==0
+by all_CVD,
+*AGE
+label value age_bl age
+rename age_bl age
+summarize age if male_IHD==1
+summarize age if male_IHD==0
+summarize age if female_IHD==1
+summarize age if female_IHD==0
+
+tab ever_smoked if male_stroke==1
+tab ever_smoked if male_stroke==0
+tab ever_smoked if female_stroke==1
+tab ever_smoked if female_stroke==0
+***
+summarize age if male_HTN==1
+summarize age if male_HTN==0
+summarize age if female_HTN==1
+summarize age if female_HTN==0
+***
+summarize age if male_stroke==1
+summarize age if male_stroke==0
+summarize age if female_stroke==1
+summarize age if female_stroke==0
+
+
+*Combined age 
+by all_stroke,sort:summ age
+by all_IHD,sort:summ age
+by all_HTN,sort:summ age
+
+*PRS OF WC
+label value wc_pval_derived_effects_prs Prs_score_Wc
+rename wc_pval_derived_effects_prs Prs_score_Wc
+summarize Prs_score_Wc if male_IHD==1
+summarize Prs_score_Wc if male_IHD==0
+summarize Prs_score_Wc if female_IHD==1
+summarize Prs_score_Wc if female_IHD==0
+****
+summarize Prs_score_Wc if male_HTN==1
+summarize Prs_score_Wc if male_HTN==0
+summarize Prs_score_Wc if female_HTN==1
+summarize Prs_score_Wc if female_HTN==0
+***
+summarize Prs_score_Wc if male_stroke==1
+summarize Prs_score_Wc if male_stroke==0
+summarize Prs_score_Wc if female_stroke==1
+summarize Prs_score_Wc if female_stroke==0
+
+*comnined PRS for WC
+by all_stroke,sort:summ Prs_score_Wc
+by all_IHD,sort:summ Prs_score_Wc
+by all_HTN,sort:summ Prs_score_Wc
+
+*PRS OF BMI
+label value bmi_pval_derived_effects_prs Prs_score_Bmi
+rename bmi_pval_derived_effects_prs Prs_score_Bmi
+summarize Prs_score_Bmi if male_IHD==1
+summarize Prs_score_Bmi if male_IHD==0
+summarize Prs_score_Bmi if female_IHD==1
+summarize Prs_score_Bmi if female_IHD==0
+***
+summarize Prs_score_Bmi if male_HTN==1
+summarize Prs_score_Bmi if male_HTN==0
+summarize Prs_score_Bmi if female_HTN==1
+summarize Prs_score_Bmi if female_HTN==0
+***
+summarize Prs_score_Bmi if male_stroke==1
+summarize Prs_score_Bmi if male_stroke==0
+summarize Prs_score_Bmi if female_stroke==1
+summarize Prs_score_Bmi if female_stroke==0
+
+*Combined for PRS OF BMI
+by all_stroke,sort:summ Prs_score_Bmi
+by all_IHD,sort:summ Prs_score_Bmi
+by all_HTN,sort:summ Prs_score_Bmi
+
+*PRS OF ADIPOSE TISSUE
+label value morph_28_inc morph_28_inc
+summarize morph_28_inc if male_IHD==1
+summarize morph_28_inc if male_IHD==0
+summarize morph_28_inc if female_IHD==1
+summarize morph_28_inc if female_IHD==0
+***
+summarize morph_28_inc if male_HTN==1
+summarize morph_28_inc if male_HTN==0
+summarize morph_28_inc if female_HTN==1
+summarize morph_28_inc if female_HTN==0
+***
+summarize morph_28_inc if male_stroke==1
+summarize morph_28_inc if male_stroke==0
+summarize morph_28_inc if female_stroke==1
+summarize morph_28_inc if female_stroke==0
+
+*combined PRS for adipose
+by all_stroke,sort:summ morph_28_inc
+by all_IHD,sort:summ morph_28_inc
+by all_HTN,sort:summ morph_28_inc
+
+*WAIST CIRCUMFERENCE
+label value n_48_0_0 WC
+rename n_48_0_0 WC 
+summarize WC if male_IHD==1
+summarize WC if male_IHD==0
+summarize WC if female_IHD==1
+summarize WC if female_IHD==0
+***
+summarize WC if male_HTN==1
+summarize WC if male_HTN==0
+summarize WC if female_HTN==1
+summarize WC if female_HTN==0
+***
+summarize WC if male_stroke==1
+summarize WC if male_stroke==0
+summarize WC if female_stroke==1
+summarize WC if female_stroke==0
+
+*combined for WC
+by all_stroke,sort:summ WC
+by all_IHD,sort:summ WC
+by all_HTN,sort:summ WC
+
+*BMI
+label value n_21001_0_0 BMI
+rename n_21001_0_0 BMI
+summarize BMI if male_IHD==1
+summarize BMI if male_IHD==0
+summarize BMI if female_IHD==1
+summarize BMI if female_IHD==0
+***
+summarize BMI if male_HTN==1
+summarize BMI if male_HTN==0
+summarize BMI if female_HTN==1
+summarize BMI if female_HTN==0
+***
+summarize BMI if male_stroke==1
+summarize BMI if male_stroke==0
+summarize BMI if female_stroke==1
+summarize BMI if female_stroke==0
+
+by female_IHD,sort:summ age
+
+*COMBINED FOR BMI
+by all_stroke,sort:summ BMI
+by all_IHD,sort:summ BMI
+by all_HTN,sort:summ BMI
+
+*WHR
+label value whr_0_0 WHR
+rename whr_0_0 WHR
+summarize WHR if male_IHD==1
+summarize WHR if male_IHD==0
+summarize WHR if female_IHD==1
+summarize WHR if female_IHD==0
+***
+summarize WHR if male_HTN==1
+summarize WHR if male_HTN==0
+summarize WHR if female_HTN==1
+summarize WHR if female_HTN==0
+***
+summarize WHR if male_stroke==1
+summarize WHR if male_stroke==0
+summarize WHR if female_stroke==1
+summarize WHR if female_stroke==0
+
+*COMBINED FOR WHR 
+by all_stroke,sort:summ WHR
+by all_IHD,sort:summ WHR
+by all_HTN,sort:summ WHR
+
+*Auto systolic
+label value autosysmean_b Systolic_mean
+rename autosysmean_b Systolic_mean
+summarize Systolic_mean if male_IHD==1
+summarize Systolic_mean if male_IHD==0
+summarize Systolic_mean if female_IHD==1
+summarize Systolic_mean if female_IHD==0
+***
+summarize Systolic_mean if male_HTN==1
+summarize Systolic_mean if male_HTN==0
+summarize Systolic_mean if female_HTN==1
+summarize Systolic_mean if female_HTN==0
+***
+summarize Systolic_mean if male_stroke==1
+summarize Systolic_mean if male_stroke==0
+summarize Systolic_mean if female_stroke==1
+summarize Systolic_mean if female_stroke==0
+
+*Combined for Systolic 
+by all_stroke,sort:summ Systolic_mean
+by all_IHD,sort:summ Systolic_mean
+by all_HTN,sort:summ Systolic_mean
+
+
+*Auto daistolic
+label value autodiamean_b Diastolic_mean
+rename autodiamean_b Diastolic_mean
+summarize Diastolic_mean if male_IHD==1
+summarize Diastolic_mean if male_IHD==0
+summarize Diastolic_mean if female_IHD==1
+summarize Diastolic_mean if female_IHD==0
+***
+summarize Diastolic_mean if male_HTN==1
+summarize Diastolic_mean if male_HTN==0
+summarize Diastolic_mean if female_HTN==1
+summarize Diastolic_mean if female_HTN==0
+***
+summarize Diastolic_mean if male_stroke==1
+summarize Diastolic_mean if male_stroke==0
+summarize Diastolic_mean if female_stroke==1
+summarize Diastolic_mean if female_stroke==0
+
+*COMBINED FOR Diastolic
+by all_stroke sex,sort:summ Diastolic_mean
+by all_IHD,sort:summ Diastolic_mean
+by all_HTN,sort:summ Diastolic_mean
+
+
+*LINEAR REGRESSION
+
+*DIASTOLIC
+regress Diastolic_mean Prs_score_Wc
+regress Diastolic_mean Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex
+regress Diastolic_mean Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex WHR i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+
+*BMI
+regress Diastolic_mean morph_28_inc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex BMI i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+
+*WC
+regress Diastolic_mean Prs_score_Wc  chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex WHR i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+
+
+*SYSTOLIC
+regress Systolic_mean Prs_score_Wc
+regress Systolic_mean Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex
+regress Systolic_mean Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex WHR i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+
+estimates store model2
+lrtest model1 model2
+
+*LOGISTIC REGRESSION 
+
+*HTN 
+logistic HTN morph_28_inc
+lroc
+logistic HTN Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex
+logistic HTN Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex WC i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+
+
+
+*ASSUMPTION CHECKER
+lrtest
+vif
+corr BMI WHR WC
+spearman ever_smoked current_smoker lipid_drug HTN_Med
+lroc
+
+*STROKE
+logistic stroke Prs_score_Wc
+logistic stroke Prs_score_Bmi  chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex
+logistic stroke morph_28_inc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex WHR i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+
+
+*IHD
+bysort  : logistic IHD Prs_score_Wc
+logistic IHD Prs_score_Wc
+logistic IHD Prs_score_Wc  chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex
+logistic IHD Prs_score_Wc chip pgc1 pgc2 pgc3 pgc4 pgc5 pgc6 pgc7 pgc8 age sex WC i.ever_smoked i.current_smoker i.lipid_drug i.HTN_Med
+estat gof,group (10)
